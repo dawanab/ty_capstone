@@ -3,11 +3,14 @@
  * Place the publishable key in the .env file for security reasons  
  * BELOW: straight from the stripe API (given)
  */
+import { Stripe } from "stripe";
 
-const stripe = require(process.env.NEXT_PUBLIC_STRIPE_SECRET_KEY);
+const stripe = new Stripe(process.env.NEXT_PUBLIC_STRIPE_SECRET_KEY);
 
 export default async function handler(req, res) {
   if (req.method === 'POST') {
+		console.log(req.body.cartItems)
+		
     try {
       const params = {
         submit_type: 'pay',
@@ -16,15 +19,15 @@ export default async function handler(req, res) {
         billing_address_collection: 'auto',
         shipping_options: [
           { shipping_rate: 'shr_1Lx9O6HSUZOMaN8jMpgYmT8R' },
-					{ shipping_rate: "shr_1Lx9PHHSUZOMaN8jOsjgLEFx" }
+					// $5 shipping rate -> { shipping_rate: "shr_1Lx9PHHSUZOMaN8jOsjgLEFx" }
         ],
-        line_items: req.body.cartItems.map((item) =>  {
+        line_items: req.body.map((item) =>  {
           const img = item.image[0].asset._ref;
           const newImage = img.replace('image-', 'https://cdn.sanity.io/images/nvnusxu7/production/').replace('-webp', '.webp');
 
           return {
             price_data: { 
-              currency: 'USD',
+              currency: 'usd',
               product_data: { 
                 name: item.name,
                 images: [newImage],
@@ -38,8 +41,8 @@ export default async function handler(req, res) {
             quantity: item.quantity
           }
         }),
-        success_url: `${req.headers.origin}/success=true`,
-        cancel_url: `${req.headers.origin}/canceled=true`,
+        success_url: `${req.headers.origin}/success`,
+        cancel_url: `${req.headers.origin}/canceled`,
       }
 
       // Create Checkout Sessions from body params.
